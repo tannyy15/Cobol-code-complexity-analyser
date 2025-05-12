@@ -228,7 +228,7 @@ const MetricsVisualizer = ({
                       {metrics.loc}
                     </td>
                     <td className="border border-gray-300 px-4 py-2">
-                      Total number of lines in the COBOL file
+                      Total number of lines in the file
                     </td>
                   </tr>
                   <tr>

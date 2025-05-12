@@ -26,17 +26,18 @@ interface AnalysisResult {
     classification: "Simple" | "Moderate" | "Complex";
     confidenceScore: number;
   };
+  explanation?: string;
   timestamp: string;
 }
 
 interface AnalysisDashboardProps {
-  analysisResult?: AnalysisResult;
+  results?: any;
+  onReset?: () => void;
   isLoading?: boolean;
 }
 
 export function AnalysisDashboard({
-  analysisResult = {
-    fileName: "example.cbl",
+  results = {
     metrics: {
       loc: 250,
       ifElseBlocks: 15,
@@ -47,8 +48,10 @@ export function AnalysisDashboard({
       classification: "Moderate",
       confidenceScore: 78.5,
     },
+    explanation: "This is a sample analysis result.",
     timestamp: new Date().toISOString(),
   },
+  onReset = () => {},
   isLoading = false,
 }: AnalysisDashboardProps) {
   const [activeTab, setActiveTab] = useState("overview");
@@ -77,14 +80,18 @@ export function AnalysisDashboard({
             Analysis Results
           </h2>
           <p className="text-muted-foreground">
-            File: {analysisResult.fileName} | Analyzed:{" "}
-            {new Date(analysisResult.timestamp).toLocaleString()}
+            Analyzed: {new Date().toLocaleString()}
           </p>
         </div>
-        <Button onClick={handleExportCSV} className="gap-2">
-          <Download size={16} />
-          Export CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={onReset} variant="outline">
+            New Analysis
+          </Button>
+          <Button onClick={handleExportCSV} className="gap-2">
+            <Download size={16} />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -93,9 +100,7 @@ export function AnalysisDashboard({
             <CardTitle className="text-sm font-medium">Lines of Code</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {analysisResult.metrics.loc}
-            </div>
+            <div className="text-2xl font-bold">{results.metrics.loc}</div>
             <p className="text-xs text-muted-foreground mt-1">
               Total lines in the COBOL file
             </p>
@@ -109,7 +114,7 @@ export function AnalysisDashboard({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {analysisResult.metrics.ifElseBlocks}
+              {results.metrics.ifElseBlocks}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Conditional logic structures
@@ -124,10 +129,10 @@ export function AnalysisDashboard({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {analysisResult.complexity.classification}
+              {results.complexity.classification}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {analysisResult.complexity.confidenceScore}% confidence
+              {results.complexity.confidenceScore}% confidence
             </p>
           </CardContent>
         </Card>
@@ -146,6 +151,21 @@ export function AnalysisDashboard({
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-6">
+          {results.explanation && (
+            <Card>
+              <CardHeader>
+                <CardTitle>AI Analysis</CardTitle>
+                <CardDescription>
+                  Gemini AI explanation of the code/document
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="p-4 bg-muted/50 rounded-md">
+                  <p className="text-sm">{results.explanation}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -158,19 +178,19 @@ export function AnalysisDashboard({
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Lines of Code</span>
-                    <span>{analysisResult.metrics.loc}</span>
+                    <span>{results.metrics.loc}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">IF/ELSE Blocks</span>
-                    <span>{analysisResult.metrics.ifElseBlocks}</span>
+                    <span>{results.metrics.ifElseBlocks}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Variable Count</span>
-                    <span>{analysisResult.metrics.variableCount}</span>
+                    <span>{results.metrics.variableCount}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Nested Depth</span>
-                    <span>{analysisResult.metrics.nestedDepth}</span>
+                    <span>{results.metrics.nestedDepth}</span>
                   </div>
                 </div>
               </CardContent>
@@ -185,8 +205,14 @@ export function AnalysisDashboard({
               </CardHeader>
               <CardContent className="flex justify-center items-center pt-6">
                 <ComplexityIndicator
-                  classification={analysisResult.complexity.classification}
-                  confidenceScore={analysisResult.complexity.confidenceScore}
+                  complexity={results.complexity.classification}
+                  confidenceScore={results.complexity.confidenceScore}
+                  metrics={{
+                    loc: results.metrics.loc,
+                    ifElseBlocks: results.metrics.ifElseBlocks,
+                    variableCount: results.metrics.variableCount,
+                    nestedDepth: results.metrics.nestedDepth,
+                  }}
                 />
               </CardContent>
             </Card>
@@ -202,7 +228,14 @@ export function AnalysisDashboard({
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              <MetricsVisualizer metrics={analysisResult.metrics} />
+              <MetricsVisualizer
+                metrics={{
+                  loc: results.metrics.loc,
+                  ifElseBlocks: results.metrics.ifElseBlocks,
+                  variableCount: results.metrics.variableCount,
+                  nestedDepth: results.metrics.nestedDepth,
+                }}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -224,10 +257,10 @@ export function AnalysisDashboard({
                   <div>
                     <h4 className="text-sm font-medium">Code Size Impact</h4>
                     <p className="text-sm text-muted-foreground">
-                      {analysisResult.metrics.loc > 500
+                      {results.metrics.loc > 500
                         ? "Large codebase"
                         : "Moderate codebase"}{" "}
-                      with {analysisResult.metrics.loc} lines of code
+                      with {results.metrics.loc} lines of code
                     </p>
                   </div>
                 </div>
@@ -241,11 +274,9 @@ export function AnalysisDashboard({
                       Control Flow Complexity
                     </h4>
                     <p className="text-sm text-muted-foreground">
-                      {analysisResult.metrics.ifElseBlocks > 20
-                        ? "High"
-                        : "Moderate"}{" "}
-                      complexity with {analysisResult.metrics.ifElseBlocks}{" "}
-                      conditional blocks
+                      {results.metrics.ifElseBlocks > 20 ? "High" : "Moderate"}{" "}
+                      complexity with {results.metrics.ifElseBlocks} conditional
+                      blocks
                     </p>
                   </div>
                 </div>
@@ -257,11 +288,9 @@ export function AnalysisDashboard({
                   <div>
                     <h4 className="text-sm font-medium">Nesting Depth</h4>
                     <p className="text-sm text-muted-foreground">
-                      {analysisResult.metrics.nestedDepth > 4
-                        ? "Deep"
-                        : "Moderate"}{" "}
+                      {results.metrics.nestedDepth > 4 ? "Deep" : "Moderate"}{" "}
                       nesting with maximum depth of{" "}
-                      {analysisResult.metrics.nestedDepth} levels
+                      {results.metrics.nestedDepth} levels
                     </p>
                   </div>
                 </div>
@@ -274,7 +303,7 @@ export function AnalysisDashboard({
                     <div
                       className="bg-primary h-2.5 rounded-full"
                       style={{
-                        width: `${analysisResult.complexity.confidenceScore}%`,
+                        width: `${results.complexity.confidenceScore}%`,
                       }}
                     ></div>
                   </div>

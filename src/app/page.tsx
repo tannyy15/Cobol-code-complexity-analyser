@@ -10,12 +10,12 @@ export default function Home() {
   const [isAnalyzing, setIsAnalyzing] = React.useState(false);
   const [error, setError] = React.useState("");
 
-  const handleFileAnalysis = async (fileContent) => {
+  const handleFileAnalysis = async (file, fileContent) => {
     setIsAnalyzing(true);
     setError("");
 
     try {
-      // Call to our simulated ML model API
+      // Call to our Gemini-powered API
       const response = await fetch("/api/analyze-cobol", {
         method: "POST",
         headers: {
@@ -25,52 +25,11 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to analyze code");
+        throw new Error("Failed to analyze content");
       }
 
-      // In a real implementation, this would be the response from the API
-      // For now, we'll use our simulated ML model results
-      const mockResults = {
-        metrics: {
-          linesOfCode: 342,
-          ifElseBlocks: 28,
-          variableCount: 56,
-          nestedDepth: 4,
-        },
-        complexity: {
-          classification: "Moderate",
-          confidenceScore: 87.5,
-        },
-        chartData: {
-          labels: [
-            "Lines of Code",
-            "IF/ELSE Blocks",
-            "Variables",
-            "Nested Depth",
-          ],
-          datasets: [
-            {
-              label: "Code Metrics",
-              data: [342, 28, 56, 4],
-              backgroundColor: [
-                "rgba(54, 162, 235, 0.6)",
-                "rgba(255, 206, 86, 0.6)",
-                "rgba(75, 192, 192, 0.6)",
-                "rgba(153, 102, 255, 0.6)",
-              ],
-              borderColor: [
-                "rgba(54, 162, 235, 1)",
-                "rgba(255, 206, 86, 1)",
-                "rgba(75, 192, 192, 1)",
-                "rgba(153, 102, 255, 1)",
-              ],
-              borderWidth: 1,
-            },
-          ],
-        },
-      };
-
-      setAnalysisResults(mockResults);
+      const results = await response.json();
+      setAnalysisResults(results);
     } catch (err) {
       console.error("Error analyzing file:", err);
       setError("Failed to analyze the file. Please try again.");
@@ -89,11 +48,11 @@ export default function Home() {
       <div className="w-full max-w-7xl">
         <header className="mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight mb-2">
-            COBOL Code Complexity Analyzer
+            Code & Document Analyzer
           </h1>
           <p className="text-muted-foreground">
-            Upload your COBOL source code to analyze its complexity using
-            machine learning
+            Upload your code or document to analyze its complexity using Gemini
+            AI
           </p>
         </header>
 
@@ -115,10 +74,8 @@ export default function Home() {
         </Card>
 
         <footer className="mt-8 text-center text-sm text-muted-foreground">
-          <p>
-            COBOL Code Complexity Analyzer &copy; {new Date().getFullYear()}
-          </p>
-          <p className="mt-1">Powered by Machine Learning</p>
+          <p>Code & Document Analyzer &copy; {new Date().getFullYear()}</p>
+          <p className="mt-1">Powered by Gemini AI</p>
         </footer>
       </div>
     </main>

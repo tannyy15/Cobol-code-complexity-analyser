@@ -14,18 +14,20 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 
 interface FileUploaderProps {
-  onFileUpload?: (file: File, content: string) => void;
-  isProcessing?: boolean;
+  onFileAnalysis?: (file: File, content: string) => void;
+  isAnalyzing?: boolean;
+  error?: string;
 }
 
 const FileUploader = ({
-  onFileUpload = () => {},
-  isProcessing = false,
+  onFileAnalysis = () => {},
+  isAnalyzing = false,
+  error: externalError = "",
 }: FileUploaderProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [fileContent, setFileContent] = useState<string>("");
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState<string>(externalError);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const handleDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -46,20 +48,30 @@ const FileUploader = ({
   }, []);
 
   const validateFile = (file: File): boolean => {
-    // Check if file is a COBOL file (typically .cob, .cbl, .cpy extensions)
-    const validExtensions = [".cob", ".cbl", ".cpy", ".txt"];
+    // Support a wider range of file types
+    const validExtensions = [
+      ".cob",
+      ".cbl",
+      ".cpy",
+      ".txt",
+      ".docx",
+      ".pdf",
+      ".doc",
+      ".rtf",
+      ".md",
+    ];
     const fileExtension = `.${file.name.split(".").pop()?.toLowerCase()}`;
 
     if (!validExtensions.includes(fileExtension)) {
       setError(
-        "Please upload a valid COBOL file (.cob, .cbl, .cpy) or .txt file",
+        "Please upload a valid file (.cob, .cbl, .cpy, .txt, .docx, .pdf, .doc, .rtf, .md)",
       );
       return false;
     }
 
-    // Check file size (limit to 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError("File size exceeds 5MB limit");
+    // Check file size (limit to 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File size exceeds 10MB limit");
       return false;
     }
 
@@ -84,7 +96,7 @@ const FileUploader = ({
         reader.onload = (e) => {
           const content = e.target?.result as string;
           setFileContent(content);
-          onFileUpload(file, content);
+          onFileAnalysis(file, content);
         };
         reader.onerror = () => {
           setError("Error reading file");
@@ -105,7 +117,7 @@ const FileUploader = ({
         processFile(droppedFile);
       }
     },
-    [onFileUpload],
+    [onFileAnalysis],
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,7 +132,7 @@ const FileUploader = ({
       <CardHeader>
         <CardTitle className="text-xl flex items-center gap-2">
           <FileCode className="h-5 w-5" />
-          COBOL File Upload
+          Code & Document Analyzer
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -142,24 +154,25 @@ const FileUploader = ({
             <Upload className="h-12 w-12 text-muted-foreground" />
             <div className="space-y-2">
               <h3 className="text-lg font-medium">
-                Drag and drop your COBOL file
+                Drag and drop your code or document file
               </h3>
               <p className="text-sm text-muted-foreground">
-                Supported formats: .cob, .cbl, .cpy, or .txt files up to 5MB
+                Supported formats: .cob, .cbl, .cpy, .txt, .docx, .pdf, .doc,
+                .rtf, .md files up to 10MB
               </p>
             </div>
             <div className="flex justify-center">
               <label htmlFor="file-upload" className="cursor-pointer">
-                <Button variant="outline" disabled={isProcessing}>
+                <Button variant="outline" disabled={isAnalyzing}>
                   Select File
                 </Button>
                 <input
                   id="file-upload"
                   type="file"
-                  accept=".cob,.cbl,.cpy,.txt"
+                  accept=".cob,.cbl,.cpy,.txt,.docx,.pdf,.doc,.rtf,.md"
                   className="hidden"
                   onChange={handleFileChange}
-                  disabled={isProcessing}
+                  disabled={isAnalyzing}
                 />
               </label>
             </div>
@@ -195,10 +208,10 @@ const FileUploader = ({
         </div>
         {file && fileContent && (
           <Button
-            onClick={() => onFileUpload(file, fileContent)}
-            disabled={isProcessing}
+            onClick={() => onFileAnalysis(file, fileContent)}
+            disabled={isAnalyzing}
           >
-            {isProcessing ? "Processing..." : "Analyze Code"}
+            {isAnalyzing ? "Processing..." : "Analyze Content"}
           </Button>
         )}
       </CardFooter>
